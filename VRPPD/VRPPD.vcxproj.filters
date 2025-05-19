@@ -18,15 +18,24 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Route.cpp">
+    <ClCompile Include="src\RouteGraph.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RouteSolution.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Route.h">
+    <ClInclude Include="src\OutputOperators.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\OutputOperators.h">
+    <ClInclude Include="src\Request.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\RouteGraph.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\RouteSolution.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

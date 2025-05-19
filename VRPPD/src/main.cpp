@@ -1,38 +1,28 @@
 #include <iostream>
-#include "Route.h"
-#include "OutputOperators.h"
+#include "RouteGraph.h"
+#include "RouteSolution.h"
 
-using io::operator<<;
-int main()
-{
-	// Example usage of the Route class
-	routing::Route route;
-	routing::Request request1{ 1, 0, 1 };
-	routing::Request request2{ 2, 1, 2 };
-	routing::Request request3{ 3, 2, 3 };
-	routing::Request request4{ 4, 2, 1 };
+int main() {
+    RouteGraph graph;
+    graph.addRequest({ 1, 1, 3 });
+    graph.addRequest({ 2, 2, 4 });
+    graph.addRequest({ 3, 3, 5 });
 
-	route.addRequest(request1);
-	std::cout << "Route: " << route << std::endl;
-	std::cout << route.getTopologicalOrder() << std::endl;
-	route.addRequest(request2);
-	std::cout << "Route: " << route << std::endl;
-	std::cout << route.getTopologicalOrder() << std::endl;
-	route.addRequest(request3);
-	std::cout << "Route: " << route << std::endl;
-	std::cout << route.getTopologicalOrder() << std::endl;
-	route.addRequest(request4);
-	std::cout << "Route: " << route << std::endl;
-	std::cout << route.getTopologicalOrder() << std::endl;
-	route.removeRequest(2);
-	std::cout << "Route after removing request 2: " << route << std::endl;
-	std::cout << route.getTopologicalOrder() << std::endl;
-	route.removeRequest(1);
-	std::cout << "Route after removing request 1: " << route << std::endl;
-	std::cout << route.getTopologicalOrder() << std::endl;
-	route.removeRequest(3);
-	std::cout << "Route after removing request 3: " << route << std::endl;
-	std::cout << route.getTopologicalOrder() << std::endl;
+    RouteSolution solution(graph, { 1, 2, 3, 4, 5 });
 
-	return 0;
+    std::cout << "Original: ";
+    for (int n : solution.getSequence()) std::cout << n << " ";
+    std::cout << "\nFeasible? " << solution.isFeasible() << "\n";
+
+    std::cout << "Trying swap(2, 3)... ";
+    if (solution.applySwap(2, 3)) {
+        std::cout << "Accepted!\n";
+    }
+    else {
+        std::cout << "Rejected (precedence violation)\n";
+    }
+
+    std::cout << "Final: ";
+    for (int n : solution.getSequence()) std::cout << n << " ";
+    std::cout << "\n";
 }

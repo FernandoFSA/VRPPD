@@ -150,11 +150,14 @@
     <ClCompile Include="src\main.cpp">
       <LanguageStandard Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdcpp20</LanguageStandard>
     </ClCompile>
-    <ClCompile Include="src\Route.cpp" />
+    <ClCompile Include="src\RouteGraph.cpp" />
+    <ClCompile Include="src\RouteSolution.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\OutputOperators.h" />
-    <ClInclude Include="src\Route.h" />
+    <ClInclude Include="src\Request.h" />
+    <ClInclude Include="src\RouteGraph.h" />
+    <ClInclude Include="src\RouteSolution.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
