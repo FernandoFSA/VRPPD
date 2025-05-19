@@ -1,5 +1,6 @@
 #include "Route.h"
 #include <algorithm>
+#include <queue>
 
 namespace routing
 {
@@ -43,93 +44,155 @@ namespace routing
 
 	// getters
 	int Node::getId() const { return m_id; }
+	const std::unordered_map<int, std::vector<int>>& Node::getPredecessors() const { return m_predecessors; }
+	const std::unordered_map<int, std::vector<int>>& Node::getSuccessors() const { return m_successors; }
 
 	// --- Route class ---
-    bool Route::isValidRequest(const Request& request) const
-    {
-        if (request.pickupNodeId < 0 || request.deliveryNodeId < 0) return false; // Invalid request
-        if (request.pickupNodeId == request.deliveryNodeId) return false; // Invalid request
-
-        // Compare the dereferenced unique_ptr objects with the request
-        auto it = std::find_if(m_requests.begin(), m_requests.end(), [&request](const std::unique_ptr<Request>& reqPtr) {
-            return *reqPtr == request;
-            });
-
-        if (it != m_requests.end()) return false; // Request already exists
-        return true;
-    }
+	bool Route::isValidRequest(const Request& request) const
+	{
+		if (request.pickupNodeId < 0 || request.deliveryNodeId < 0) return false;
+		if (request.pickupNodeId == request.deliveryNodeId) return false;
+		if (m_requests.find(request.id) != m_requests.end()) return false;
+		return true;
+	}
 
     bool Route::addRequest(const Request& request)  
     {  
-       if (!isValidRequest(request)) return false;  
+		if (!isValidRequest(request)) return false;
 
-       int pickupNodeId = request.pickupNodeId;  
-       int deliveryNodeId = request.deliveryNodeId;  
-       auto pickupNodeIt = std::find_if(m_nodes.begin(), m_nodes.end(), [pickupNodeId](const std::unique_ptr<Node>& node) { return node->getId() == pickupNodeId; });  
-       auto deliveryNodeIt = std::find_if(m_nodes.begin(), m_nodes.end(), [deliveryNodeId](const std::unique_ptr<Node>& node) { return node->getId() == deliveryNodeId; });  
-       bool isPickupNodePresent = (pickupNodeIt != m_nodes.end());  
-       bool isDeliveryNodePresent = (deliveryNodeIt != m_nodes.end());  
+		int pickupNodeId = request.pickupNodeId;
+		int deliveryNodeId = request.deliveryNodeId;
 
-       // If both nodes are present and in the correct order, add the request  
-       if (isPickupNodePresent && isDeliveryNodePresent)
-       {  
-           if ((*pickupNodeIt)->isPredecessor(deliveryNodeId) || (*deliveryNodeIt)->isSuccessor(pickupNodeId))
-           {  
-               return false; // Invalid request due to opposite dependencies  
-           }  
-           (*pickupNodeIt)->addSuccessor(deliveryNodeId, request.id);  
-           (*deliveryNodeIt)->addPredecessor(pickupNodeId, request.id);  
-       }  
-       else if (!isPickupNodePresent && !isDeliveryNodePresent)  
-       {  
-           m_nodes.emplace_back(std::make_unique<Node>(pickupNodeId));  
-           m_nodes.back()->addSuccessor(deliveryNodeId, request.id);  
-           m_nodes.emplace_back(std::make_unique<Node>(deliveryNodeId));  
-           m_nodes.back()->addPredecessor(pickupNodeId, request.id);  
-       }  
-       else  
-       {  
-           // Add the missing node and update the existing one  
-           if (!isPickupNodePresent)  
-           {  
-               (*deliveryNodeIt)->addPredecessor(pickupNodeId, request.id);
-               m_nodes.insert(m_nodes.begin(), std::make_unique<Node>(pickupNodeId));  
-               m_nodes.front()->addSuccessor(deliveryNodeId, request.id);  
-           }  
-           if (!isDeliveryNodePresent)  
-           {  
-               (*pickupNodeIt)->addSuccessor(deliveryNodeId, request.id);  
-               m_nodes.emplace_back(std::make_unique<Node>(deliveryNodeId));  
-               m_nodes.back()->addPredecessor(pickupNodeId, request.id);  
-           }  
-       }  
-       m_requests.push_back(std::make_unique<Request>(request));
+		auto pickupIt = m_nodes.find(pickupNodeId);
+		auto deliveryIt = m_nodes.find(deliveryNodeId);
 
-       return true;  
+		bool pickupExists = pickupIt != m_nodes.end();
+		bool deliveryExists = deliveryIt != m_nodes.end();
+
+		if (pickupExists && deliveryExists)
+		{
+			if (pickupIt->second->isPredecessor(deliveryNodeId) || deliveryIt->second->isSuccessor(pickupNodeId))
+				return false;
+
+			pickupIt->second->addSuccessor(deliveryNodeId, request.id);
+			deliveryIt->second->addPredecessor(pickupNodeId, request.id);
+		}
+		else if (!pickupExists && !deliveryExists)
+		{
+			m_nodes[pickupNodeId] = std::make_unique<Node>(pickupNodeId);
+			m_nodes[pickupNodeId]->addSuccessor(deliveryNodeId, request.id);
+
+			m_nodes[deliveryNodeId] = std::make_unique<Node>(deliveryNodeId);
+			m_nodes[deliveryNodeId]->addPredecessor(pickupNodeId, request.id);
+		}
+		else
+		{
+			if (!pickupExists)
+			{
+				m_nodes[pickupNodeId] = std::make_unique<Node>(pickupNodeId);
+				m_nodes[pickupNodeId]->addSuccessor(deliveryNodeId, request.id);
+				deliveryIt->second->addPredecessor(pickupNodeId, request.id);
+			}
+			if (!deliveryExists)
+			{
+				m_nodes[deliveryNodeId] = std::make_unique<Node>(deliveryNodeId);
+				m_nodes[deliveryNodeId]->addPredecessor(pickupNodeId, request.id);
+				pickupIt->second->addSuccessor(deliveryNodeId, request.id);
+			}
+		}
+
+		m_requests[request.id] = std::make_unique<Request>(request);
+		return true;
     }
 
     void Route::removeRequest(int requestId)
     {
-       auto requestIt = std::find_if(m_requests.begin(), m_requests.end(), [requestId](const std::unique_ptr<Request>& request) { return request->id == requestId; });
-       auto pickupNodeIt = std::find_if(m_nodes.begin(), m_nodes.end(), [requestIt](const std::unique_ptr<Node>& node) { return node->getId() == (*requestIt)->pickupNodeId; });
-	   auto deliveryNodeIt = std::find_if(m_nodes.begin(), m_nodes.end(), [requestIt](const std::unique_ptr<Node>& node) { return node->getId() == (*requestIt)->deliveryNodeId; });
+        auto requestIt = m_requests.find(requestId);
+        if (requestIt != m_requests.end())
+        {
+            const Request& req = *(requestIt->second);
+            int pickupNodeId = req.pickupNodeId;
+            int deliveryNodeId = req.deliveryNodeId;
 
-       if (requestIt != m_requests.end())
-       {
-		   (*deliveryNodeIt)->removePredecessor((*requestIt)->pickupNodeId, requestId);
-           if (!(*deliveryNodeIt)->hasDependencies()) m_nodes.erase(deliveryNodeIt);
-		   (*pickupNodeIt)->removeSuccessor((*requestIt)->deliveryNodeId, requestId);
-           if (!(*pickupNodeIt)->hasDependencies()) m_nodes.erase(pickupNodeIt);
-           m_requests.erase(requestIt);
-       }
+            auto pickupIt = m_nodes.find(pickupNodeId);
+            auto deliveryIt = m_nodes.find(deliveryNodeId);
+
+            if (pickupIt != m_nodes.end())
+            {
+                pickupIt->second->removeSuccessor(deliveryNodeId, requestId);
+                if (!pickupIt->second->hasDependencies())
+                    m_nodes.erase(pickupIt);
+            }
+
+            if (deliveryIt != m_nodes.end())
+            {
+                deliveryIt->second->removePredecessor(pickupNodeId, requestId);
+                if (!deliveryIt->second->hasDependencies())
+                    m_nodes.erase(deliveryIt);
+            }
+
+            m_requests.erase(requestIt);
+        }
     }
+
+	std::vector<int> Route::getTopologicalOrder() const
+	{
+		std::unordered_map<int, int> inDegree;
+		std::unordered_map<int, std::vector<int>> adjList;
+
+		// Passo 1: Construir grafo (adjList) e calcular grau de entrada
+		for (const auto& [nodeId, nodePtr] : m_nodes)
+		{
+			if (!inDegree.count(nodeId))
+				inDegree[nodeId] = 0; // inicializa
+
+			for (const auto& [succId, _] : nodePtr->getSuccessors())
+			{
+				adjList[nodeId].push_back(succId);
+				inDegree[succId]++;
+			}
+		}
+
+		// Passo 2: Inicializar fila com nós com grau de entrada 0
+		std::queue<int> q;
+		for (const auto& [nodeId, degree] : inDegree)
+		{
+			if (degree == 0)
+				q.push(nodeId);
+		}
+
+		std::vector<int> result;
+
+		// Passo 3: Processar ordenação topológica
+		while (!q.empty())
+		{
+			int current = q.front();
+			q.pop();
+			result.push_back(current);
+
+			for (int neighbor : adjList[current])
+			{
+				if (--inDegree[neighbor] == 0)
+					q.push(neighbor);
+			}
+		}
+
+		// Passo 4: Verificar se houve ciclo (grafo não é DAG)
+		if (result.size() != m_nodes.size())
+		{
+			throw std::runtime_error("Ciclo detectado na rota! Não é possível obter uma ordenação topológica.");
+		}
+
+		return result;
+	}
+
 
     std::ostream& operator<<(std::ostream& os, const Route& route)
     {
         using io::operator<<;
-		for (const auto& node : route.m_nodes)
+		for (const auto& pair : route.m_nodes)
 		{
-			os << *node << " ";
+			os << *pair.second << " ";
 		}
         return os;
     }

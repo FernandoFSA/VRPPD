@@ -50,6 +50,8 @@ namespace routing
 
 		// getters
 		int getId() const;
+		const std::unordered_map<int, std::vector<int>>& getPredecessors() const;
+		const std::unordered_map<int, std::vector<int>>& getSuccessors() const;
 
 	private:
 		const int m_id;
@@ -66,8 +68,9 @@ namespace routing
 		bool addRequest(const Request& request);
 		bool isValidRequest(const Request& request) const;
 		void removeRequest(int requestId);
+		std::vector<int> getTopologicalOrder() const;
 	private:
-		std::vector<std::unique_ptr<Node>> m_nodes;
-		std::vector<std::unique_ptr<Request>> m_requests;
+		std::unordered_map<int, std::unique_ptr<Node>> m_nodes;
+		std::unordered_map<int, std::unique_ptr<Request>> m_requests;
 	};
 }

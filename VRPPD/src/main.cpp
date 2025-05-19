@@ -1,6 +1,8 @@
 #include <iostream>
 #include "Route.h"
+#include "OutputOperators.h"
 
+using io::operator<<;
 int main()
 {
 	// Example usage of the Route class
@@ -12,18 +14,25 @@ int main()
 
 	route.addRequest(request1);
 	std::cout << "Route: " << route << std::endl;
+	std::cout << route.getTopologicalOrder() << std::endl;
 	route.addRequest(request2);
 	std::cout << "Route: " << route << std::endl;
+	std::cout << route.getTopologicalOrder() << std::endl;
 	route.addRequest(request3);
 	std::cout << "Route: " << route << std::endl;
+	std::cout << route.getTopologicalOrder() << std::endl;
 	route.addRequest(request4);
 	std::cout << "Route: " << route << std::endl;
+	std::cout << route.getTopologicalOrder() << std::endl;
 	route.removeRequest(2);
 	std::cout << "Route after removing request 2: " << route << std::endl;
+	std::cout << route.getTopologicalOrder() << std::endl;
 	route.removeRequest(1);
 	std::cout << "Route after removing request 1: " << route << std::endl;
+	std::cout << route.getTopologicalOrder() << std::endl;
 	route.removeRequest(3);
 	std::cout << "Route after removing request 3: " << route << std::endl;
+	std::cout << route.getTopologicalOrder() << std::endl;
 
 	return 0;
 }
