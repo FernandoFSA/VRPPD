@@ -15,3 +15,20 @@ This library provides classes to represent nodes, requests, and routes, supporti
   Stream output for easy debugging and logging.
 
 ## Usage
+#include "Route.h"
+int main() { routingRoute route; routingRequest request1{ 1, 0, 1 }; route.addRequest(request1); stdcout << "Route: " << route << stdendl; // ... more operations }
+See [`main.cpp`](src/main.cpp) for a complete example.
+
+## Requirements
+
+- C++20 compatible compiler
+
+## File Overview
+
+- `src/Route.h` – Main library header
+- `src/Route.cpp` – Implementation
+- `src/main.cpp` – Example usage
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
